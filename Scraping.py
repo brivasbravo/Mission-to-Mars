@@ -1,7 +1,6 @@
 
 # Import Splinter and BeautifulSoup
-from dataclasses import dataclass
-from sys import exec_prefix
+
 from splinter import Browser
 from bs4 import BeautifulSoup as soup
 from webdriver_manager.chrome import ChromeDriverManager
