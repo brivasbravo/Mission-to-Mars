@@ -13,6 +13,7 @@ def scrape_all():
     browser = Browser('chrome', **executable_path, headless=True)
 
     news_title, news_paragraph = mars_news(browser)
+    hemisphere_image_urls = hemisphere(browser)
 
     # Run all scraping functions and store results in dictionary
     data = {
@@ -20,6 +21,7 @@ def scrape_all():
       "news_paragraph": news_paragraph,
       "featured_image": featured_image(browser),
       "facts": mars_facts(),
+      "hemispheres": hemisphere_image_urls,
       "last_modified": dt.datetime.now()
     }
 
@@ -27,18 +29,18 @@ def scrape_all():
     browser.quit()
     return data
 
-executable_path = {'executable_path': ChromeDriverManager().install()}
-browser = Browser('chrome', **executable_path, headless=False)
+#executable_path = {'executable_path': ChromeDriverManager().install()}
+#browser = Browser('chrome', **executable_path, headless=False)
 
 def mars_news(browser):
 
     # Visit the mars nasa news site
-    url = 'https://data-class-mars.s3.amazonaws.com/Mars/index.html'    
+    url = 'https://redplanetscience.com/'    
     browser.visit(url)
     # Optional delay for loading the page
     browser.is_element_present_by_css('div.list_text', wait_time=1)
 
-    #convert browser html to soup object and quit browser
+    #set up html parser
     html = browser.html
     news_soup = soup(html, 'html.parser')
 
@@ -46,9 +48,6 @@ def mars_news(browser):
     try:
 
         slide_elem = news_soup.select_one('div.list_text')
-
-
-        slide_elem.find('div', class_='content_title')
 
         # Use the parent element to find the first `a` tag and save it as `news_title`
         news_title = slide_elem.find('div', class_='content_title').get_text()
@@ -68,7 +67,7 @@ def mars_news(browser):
 def featured_image(browser):
 
     # Visit URL
-    url = 'https://data-class-jpl-space.s3.amazonaws.com/JPL_Space/index.html'
+    url = 'https://spaceimages-mars.com'
     browser.visit(url)
 
 
@@ -91,7 +90,7 @@ def featured_image(browser):
 
 
     # Use the base URL to create an absolute URL
-    img_url = f'https://data-class-jpl-space.s3.amazonaws.com/JPL_Space/{img_url_rel}'
+    img_url = f'https://spaceimages-mars.com/{img_url_rel}'
 
     return img_url
 
@@ -112,7 +111,26 @@ def mars_facts():
     # convert df into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
 
+# creating hemisphere function
+def hemisphere(browser):
 
+    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+    browser.visit(url)
+    
+    hemisphere_image_urls = []
+    img_link = browser.find_by_css('a.product-item h3')
+    
+    for i in range(len(img_link)):
+        hemispheres = {}
+        browser.find_by_css('a.product-item h3')[i].click()
+        sample_image = browser.find_link_by_text('Sample').first
+        hemispheres["img_url"] = sample_image['href']
+        hemispheres['title'] = browser.find_by_css('h2.title').text
+        hemisphere_image_urls.append(hemispheres)
+        
+        browser.back()
+
+    return hemipshere_image_urls
 
 if __name__ == "__main__":
     # If running as script, print scraped data
